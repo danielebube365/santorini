@@ -37,27 +37,44 @@
   const y = $('#year');
   if (y) y.textContent = new Date().getFullYear();
 
-  /* ---------- video autoplay (Chrome policy needs explicit kick) ---------- */
+  /* ---------- video autoplay + on-screen-only playback (saves CPU) ---------- */
   const reducedMotion = window.matchMedia &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  $$('video[autoplay]').forEach((v) => {
-    if (reducedMotion) {
-      v.autoplay = false;
-      v.pause();
-      v.removeAttribute('autoplay');
-      return;
+  const allVids = $$('video[autoplay]');
+  const reelVids = new Set($$('.reel__item video'));
+  const kick = (v) => {
+    const p = () => v.play().catch(() => {});
+    if (v.readyState >= 2) p();
+    else v.addEventListener('loadeddata', p, { once: true });
+  };
+
+  allVids.forEach((v) => { v.muted = true; v.setAttribute('muted', ''); });
+
+  if (reducedMotion) {
+    allVids.forEach((v) => { v.pause(); v.removeAttribute('autoplay'); });
+  } else {
+    // hero / story videos: always play
+    allVids.forEach((v) => { if (!reelVids.has(v)) kick(v); });
+
+    // reel strip videos: only play the few that are actually on screen,
+    // pause the rest so we never decode ~20 videos at once.
+    if ('IntersectionObserver' in window && reelVids.size) {
+      reelVids.forEach((v) => v.removeAttribute('autoplay'));
+      const vio = new IntersectionObserver((entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) kick(e.target);
+          else e.target.pause();
+        });
+      }, { rootMargin: '120px' });
+      reelVids.forEach((v) => vio.observe(v));
+    } else {
+      reelVids.forEach(kick);
     }
-    // Ensure muted before play (browsers block unmuted autoplay)
-    v.muted = true;
-    v.setAttribute('muted', '');
-    const tryPlay = () => v.play().catch(() => {});
-    if (v.readyState >= 2) tryPlay();
-    else v.addEventListener('loadeddata', tryPlay, { once: true });
-    // Re-kick on visibility return
+
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && v.paused) tryPlay();
+      if (!document.hidden) allVids.forEach((v) => { if (!reelVids.has(v) && v.paused) kick(v); });
     });
-  });
+  }
 
   /* ---------- scroll-reveal ---------- */
   const reveals = new Set($$('.reveal'));

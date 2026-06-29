@@ -1407,7 +1407,6 @@ body::after {
   padding: 0 0.55rem;
   animation: reelMarquee 30s linear infinite;
 }
-.reel:hover .reel__track { animation-play-state: paused; }
 @keyframes reelMarquee {
   from { transform: translateX(0); }
   to   { transform: translateX(-50%); }
