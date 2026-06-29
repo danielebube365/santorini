@@ -1403,10 +1403,9 @@ body::after {
 }
 .reel__track {
   display: flex;
-  gap: 1.1rem;
   width: max-content;
   padding: 0 0.55rem;
-  animation: reelMarquee 46s linear infinite;
+  animation: reelMarquee 30s linear infinite;
 }
 .reel:hover .reel__track { animation-play-state: paused; }
 @keyframes reelMarquee {
@@ -1417,6 +1416,7 @@ body::after {
   position: relative;
   flex: 0 0 auto;
   width: clamp(190px, 22vw, 280px);
+  margin-right: 1.1rem;
   aspect-ratio: 9 / 14;
   overflow: hidden;
   border: 1px solid var(--gold-faint);
